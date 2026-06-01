@@ -1,4 +1,5 @@
 export const AUTO_LANGUAGE = "auto";
+export const LANGUAGE_PREFERENCE_STORAGE_KEY = "languagePreference";
 
 export const SUPPORTED_LANGUAGES = [
   { code: "de", label: "Deutsch" },

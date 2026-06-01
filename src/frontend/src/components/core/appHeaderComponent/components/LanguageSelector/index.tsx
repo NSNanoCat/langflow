@@ -11,11 +11,17 @@ import {
 } from "@/components/ui/select";
 import {
   AUTO_LANGUAGE,
+  LANGUAGE_PREFERENCE_STORAGE_KEY,
   SUPPORTED_LANGUAGES,
   type LanguagePreference,
 } from "@/constants/languages";
 import { getBrowserLanguage, loadLanguage, normalizeLanguage } from "@/i18n";
 import { useTypesStore } from "@/stores/typesStore";
+import {
+  getLocalStorage,
+  removeLocalStorage,
+  setLocalStorage,
+} from "@/utils/local-storage-util";
 
 type LanguageSelectorProps = {
   className?: string;
@@ -39,8 +45,9 @@ export const LanguageSelector = ({
   const setTypes = useTypesStore((state) => state.setTypes);
   const [languagePreference, setLanguagePreference] =
     useState<LanguagePreference>(() => {
-      const storedLanguagePreference =
-        localStorage.getItem("languagePreference");
+      const storedLanguagePreference = getLocalStorage(
+        LANGUAGE_PREFERENCE_STORAGE_KEY,
+      );
 
       return storedLanguagePreference &&
         storedLanguagePreference !== AUTO_LANGUAGE
@@ -50,12 +57,12 @@ export const LanguageSelector = ({
 
   const handleChange = async (code: LanguagePreference) => {
     if (code === AUTO_LANGUAGE) {
-      localStorage.removeItem("languagePreference");
+      removeLocalStorage(LANGUAGE_PREFERENCE_STORAGE_KEY);
       setLanguagePreference(AUTO_LANGUAGE);
       await loadLanguage(getBrowserLanguage());
     } else {
       const normalizedLanguage = normalizeLanguage(code);
-      localStorage.setItem("languagePreference", normalizedLanguage);
+      setLocalStorage(LANGUAGE_PREFERENCE_STORAGE_KEY, normalizedLanguage);
       setLanguagePreference(normalizedLanguage);
       await loadLanguage(normalizedLanguage);
     }

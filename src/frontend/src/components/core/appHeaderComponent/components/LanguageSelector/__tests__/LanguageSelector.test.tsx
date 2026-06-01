@@ -9,6 +9,8 @@ const mockGetBrowserLanguage = jest.fn(() => "zh-Hans");
 const mockNormalizeLanguage = jest.fn((lang: string) =>
   lang === "fr-FR" ? "fr" : lang,
 );
+let mockSelectValue: string | undefined;
+let mockSelectOnValueChange: ((v: string) => void) | undefined;
 
 jest.mock("@/i18n", () => ({
   getBrowserLanguage: mockGetBrowserLanguage,
@@ -47,19 +49,39 @@ jest.mock("@/components/ui/select", () => ({
     children: React.ReactNode;
     value?: string;
     onValueChange?: (v: string) => void;
+  }) => {
+    mockSelectValue = value;
+    mockSelectOnValueChange = onValueChange;
+
+    return <div>{children}</div>;
+  },
+  SelectTrigger: ({
+    children,
+    className,
+    "aria-label": ariaLabel,
+  }: {
+    children: React.ReactNode;
+    className?: string;
+    "aria-label"?: string;
   }) => (
+    <button
+      aria-label={ariaLabel}
+      className={className}
+      data-testid="select-trigger"
+      type="button"
+    >
+      {children}
+    </button>
+  ),
+  SelectValue: () => null,
+  SelectContent: ({ children }: { children: React.ReactNode }) => (
     <select
       aria-label="settings.languageSelectAriaLabel"
-      value={value}
-      onChange={(event) => onValueChange?.(event.target.value)}
+      value={mockSelectValue}
+      onChange={(event) => mockSelectOnValueChange?.(event.target.value)}
     >
       {children}
     </select>
-  ),
-  SelectTrigger: () => null,
-  SelectValue: () => null,
-  SelectContent: ({ children }: { children: React.ReactNode }) => (
-    <>{children}</>
   ),
   SelectItem: ({
     children,
@@ -76,6 +98,12 @@ describe("LanguageSelector", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     localStorage.clear();
+    mockSelectValue = undefined;
+    mockSelectOnValueChange = undefined;
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it("renders Auto plus manual language options in locale file order", () => {
@@ -111,6 +139,22 @@ describe("LanguageSelector", () => {
     expect(screen.getByRole("combobox")).toHaveValue(AUTO_LANGUAGE);
   });
 
+  it("applies trigger styling and icon props", () => {
+    render(
+      <LanguageSelector
+        className="selector-shell"
+        showIcon
+        triggerClassName="selector-trigger"
+      />,
+    );
+
+    expect(screen.getByTestId("select-trigger")).toHaveClass(
+      "selector-shell",
+      "selector-trigger",
+    );
+    expect(screen.getByTestId("Globe")).toBeInTheDocument();
+  });
+
   it("normalizes stored manual preferences before displaying them", () => {
     localStorage.setItem("languagePreference", "fr-FR");
 
@@ -118,6 +162,15 @@ describe("LanguageSelector", () => {
 
     expect(mockNormalizeLanguage).toHaveBeenCalledWith("fr-FR");
     expect(screen.getByRole("combobox")).toHaveValue("fr");
+  });
+
+  it("falls back to Auto when stored preference cannot be read", () => {
+    jest.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("Storage unavailable");
+    });
+
+    expect(() => render(<LanguageSelector />)).not.toThrow();
+    expect(screen.getByRole("combobox")).toHaveValue(AUTO_LANGUAGE);
   });
 
   it("saves manual selections and refreshes type data", async () => {
@@ -136,6 +189,24 @@ describe("LanguageSelector", () => {
     });
   });
 
+  it("continues switching manual languages when persistence fails", async () => {
+    const user = userEvent.setup();
+    jest.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("Storage unavailable");
+    });
+    render(<LanguageSelector />);
+
+    await user.selectOptions(screen.getByRole("combobox"), "de");
+
+    await waitFor(() => {
+      expect(mockLoadLanguage).toHaveBeenCalledWith("de");
+      expect(mockSetTypes).toHaveBeenCalledWith({});
+      expect(mockInvalidateQueries).toHaveBeenCalledWith({
+        queryKey: ["useGetTypes"],
+      });
+    });
+  });
+
   it("clears manual preference and loads browser language when selecting Auto", async () => {
     const user = userEvent.setup();
     localStorage.setItem("languagePreference", "fr");
@@ -145,6 +216,26 @@ describe("LanguageSelector", () => {
 
     await waitFor(() => {
       expect(localStorage.getItem("languagePreference")).toBeNull();
+      expect(mockGetBrowserLanguage).toHaveBeenCalled();
+      expect(mockLoadLanguage).toHaveBeenCalledWith("zh-Hans");
+      expect(mockSetTypes).toHaveBeenCalledWith({});
+      expect(mockInvalidateQueries).toHaveBeenCalledWith({
+        queryKey: ["useGetTypes"],
+      });
+    });
+  });
+
+  it("continues switching to Auto when persistence cleanup fails", async () => {
+    const user = userEvent.setup();
+    localStorage.setItem("languagePreference", "fr");
+    jest.spyOn(Storage.prototype, "removeItem").mockImplementation(() => {
+      throw new Error("Storage unavailable");
+    });
+
+    render(<LanguageSelector />);
+    await user.selectOptions(screen.getByRole("combobox"), AUTO_LANGUAGE);
+
+    await waitFor(() => {
       expect(mockGetBrowserLanguage).toHaveBeenCalled();
       expect(mockLoadLanguage).toHaveBeenCalledWith("zh-Hans");
       expect(mockSetTypes).toHaveBeenCalledWith({});
