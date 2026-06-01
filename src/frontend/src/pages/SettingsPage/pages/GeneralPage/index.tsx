@@ -1,7 +1,8 @@
+import type { AxiosError } from "axios";
 import { cloneDeep } from "lodash";
 import { useContext, useState } from "react";
-import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useParams } from "react-router-dom";
 import { usePostAddApiKey } from "@/controllers/API/queries/api-keys";
 import {
   useResetPassword,
@@ -68,7 +69,10 @@ export const GeneralPage = () => {
           onError: (error) => {
             setErrorData({
               title: t("errors.saveChanges"),
-              list: [(error as any)?.response?.data?.detail],
+              list: [
+                (error as AxiosError<{ detail?: string }>).response?.data
+                  ?.detail,
+              ],
             });
           },
         },
@@ -92,7 +96,10 @@ export const GeneralPage = () => {
           onError: (error) => {
             setErrorData({
               title: t("errors.saveChanges"),
-              list: [(error as any)?.response?.data?.detail],
+              list: [
+                (error as AxiosError<{ detail?: string }>).response?.data
+                  ?.detail,
+              ],
             });
           },
         },
@@ -113,7 +120,9 @@ export const GeneralPage = () => {
     onError: (error) => {
       setErrorData({
         title: t("errors.saveApiKey"),
-        list: [(error as any)?.response?.data?.detail],
+        list: [
+          (error as AxiosError<{ detail?: string }>).response?.data?.detail,
+        ],
       });
       setHasApiKey(false);
       setValidApiKey(false);

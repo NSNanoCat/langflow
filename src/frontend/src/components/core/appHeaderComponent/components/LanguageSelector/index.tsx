@@ -12,8 +12,8 @@ import {
 import {
   AUTO_LANGUAGE,
   LANGUAGE_PREFERENCE_STORAGE_KEY,
-  SUPPORTED_LANGUAGES,
   type LanguagePreference,
+  SUPPORTED_LANGUAGES,
 } from "@/constants/languages";
 import { getBrowserLanguage, loadLanguage, normalizeLanguage } from "@/i18n";
 import { useTypesStore } from "@/stores/typesStore";

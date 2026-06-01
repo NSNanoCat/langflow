@@ -10,7 +10,7 @@ import LoginLanguageSelector from "@/pages/LoginPage/components/LoginLanguageSel
 import InputComponent from "../../components/core/parameterRenderComponent/components/inputComponent";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
-import { CONTROL_LOGIN_STATE, IS_AUTO_LOGIN } from "../../constants/constants";
+import { CONTROL_LOGIN_STATE } from "../../constants/constants";
 import { AuthContext } from "../../contexts/authContext";
 import useAlertStore from "../../stores/alertStore";
 import type { LoginType } from "../../types/api";

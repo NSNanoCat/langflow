@@ -1,10 +1,10 @@
 import "./i18n";
+import ReactDOM from "react-dom/client";
 import {
   AUTO_LANGUAGE,
   LANGUAGE_PREFERENCE_STORAGE_KEY,
 } from "./constants/languages";
 import { getBrowserLanguage, loadLanguage } from "./i18n";
-import ReactDOM from "react-dom/client";
 import reportWebVitals from "./reportWebVitals";
 import { getLocalStorage } from "./utils/local-storage-util";
 

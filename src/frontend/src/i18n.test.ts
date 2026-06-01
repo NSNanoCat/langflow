@@ -1,4 +1,5 @@
 jest.unmock("react-i18next");
+
 import { AUTO_LANGUAGE } from "./constants/languages";
 import i18n, {
   getBrowserLanguage,
