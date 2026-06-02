@@ -22,9 +22,7 @@ export const getLocalStorage = (key: string): string | null => {
 export const setLocalStorage = (key: string, value: string): void => {
   try {
     localStorage.setItem(key, value);
-  } catch {
-    return;
-  }
+  } catch {}
 };
 
 /**
@@ -36,7 +34,5 @@ export const setLocalStorage = (key: string, value: string): void => {
 export const removeLocalStorage = (key: string): void => {
   try {
     localStorage.removeItem(key);
-  } catch {
-    return;
-  }
+  } catch {}
 };
