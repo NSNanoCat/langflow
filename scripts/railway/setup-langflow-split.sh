@@ -117,12 +117,12 @@ done
   --service-config "$API_SERVICE" source.branch "$BRANCH" \
   --service-config "$API_SERVICE" build.builder DOCKERFILE \
   --service-config "$API_SERVICE" build.dockerfilePath "docker/build_and_push_backend.Dockerfile" \
-  --service-config "$API_SERVICE" deploy.healthcheckPath "/health" \
+  --service-config "$API_SERVICE" deploy.healthcheckPath "/health_check" \
   --service-config "$WEB_SERVICE" source.repo "NSNanoCat/langflow" \
   --service-config "$WEB_SERVICE" source.branch "$BRANCH" \
   --service-config "$WEB_SERVICE" build.builder DOCKERFILE \
   --service-config "$WEB_SERVICE" build.dockerfilePath "docker/frontend/build_and_push_frontend.Dockerfile" \
-  --service-config "$WEB_SERVICE" deploy.healthcheckPath "/health" \
+  --service-config "$WEB_SERVICE" deploy.healthcheckPath "/" \
   --json >/dev/null
 
 "$RAILWAY_BIN" variable set \
@@ -132,6 +132,7 @@ done
   --skip-deploys \
   "LANGFLOW_BACKEND_ONLY=True" \
   "LANGFLOW_HOST=0.0.0.0" \
+  "PORT=7860" \
   "LANGFLOW_PORT=7860" \
   "LANGFLOW_DATABASE_URL=\${{${POSTGRES_SERVICE}.DATABASE_URL}}" \
   "LANGFLOW_ALEMBIC_LOG_TO_STDOUT=True" \
