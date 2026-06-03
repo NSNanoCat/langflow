@@ -38,10 +38,9 @@ ENV PATH="/app/.venv/bin:$PATH"
 ENV VIRTUAL_ENV="/app/.venv"
 
 # Install langflow-base with all extras except dev (which includes Playwright)
-# 中文：修复 Railway Metal builder 要求 cache mount id 使用 cacheKey 前缀的构建失败。
-# English: Fix Railway Metal builder failures by using the required cacheKey-prefixed cache mount id.
-RUN --mount=type=cache,id=cacheKey-langflow-backend-uv,target=/root/.cache/uv \
-    uv pip install ./src/sdk ./src/lfx "./src/backend/base[complete,postgresql]"
+# 中文：修复 Railway Metal builder 拒绝非服务绑定 cache mount id 导致镜像无法构建的问题。
+# English: Fix Railway Metal builder failures caused by non-service-bound cache mount IDs.
+RUN uv pip install ./src/sdk ./src/lfx "./src/backend/base[complete,postgresql]"
 
 ################################
 # RUNTIME
