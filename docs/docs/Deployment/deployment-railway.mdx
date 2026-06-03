@@ -33,7 +33,7 @@ You can deploy Langflow on Railway in either of the following ways:
 
 Use this layout when you want a Python backend service, a separate static frontend service, and Railway-managed PostgreSQL and Redis services.
 The backend service runs in `LANGFLOW_BACKEND_ONLY=True` mode, and the frontend service serves the built React app through nginx.
-The frontend proxies `/api`, `/health`, and `/health_check` requests to the backend over Railway private networking.
+The frontend proxies `/api` and `/health_check` requests to the backend over Railway private networking, and serves `/health` locally for frontend container health checks.
 
 ### Services
 
@@ -55,6 +55,8 @@ Set these variables on the `langflow-api` service:
 ```text
 LANGFLOW_BACKEND_ONLY=True
 LANGFLOW_HOST=0.0.0.0
+PORT=7860
+LANGFLOW_PORT=7860
 LANGFLOW_DATABASE_URL=${{Postgres.DATABASE_URL}}
 LANGFLOW_ALEMBIC_LOG_TO_STDOUT=True
 LANGFLOW_AUTO_LOGIN=False
@@ -78,7 +80,7 @@ For more information, see [API keys and authentication](/api-keys-and-authentica
 Set these variables on the `langflow-web` service:
 
 ```text
-BACKEND_URL=http://${{langflow-api.RAILWAY_PRIVATE_DOMAIN}}:${{langflow-api.PORT}}
+BACKEND_URL=http://${{langflow-api.RAILWAY_PRIVATE_DOMAIN}}:7860
 ```
 
 The frontend public domain is the URL users open in their browsers.
@@ -92,7 +94,7 @@ If you use the Railway CLI, the equivalent service configuration commands are:
 ```shell
 railway environment edit --service-config langflow-api build.builder DOCKERFILE
 railway environment edit --service-config langflow-api build.dockerfilePath "docker/build_and_push_backend.Dockerfile"
-railway environment edit --service-config langflow-api deploy.healthcheckPath "/health"
+railway environment edit --service-config langflow-api deploy.healthcheckPath "/health_check"
 
 railway environment edit --service-config langflow-web build.builder DOCKERFILE
 railway environment edit --service-config langflow-web build.dockerfilePath "docker/frontend/build_and_push_frontend.Dockerfile"
@@ -101,11 +103,12 @@ railway environment edit --service-config langflow-web deploy.healthcheckPath "/
 
 ### Validate the deployment
 
-1. Open the `langflow-api` public URL at `/health`.
+1. Open the `langflow-api` public URL at `/health_check`.
 2. Open the `langflow-web` public URL.
-3. Sign in with the configured superuser credentials.
-4. Create or open a flow and run it in the Playground.
-5. If Redis cache is enabled, check `langflow-api` logs for Redis connection errors.
+3. Open the `langflow-web` public URL at `/health_check` to verify the frontend can proxy to the backend.
+4. Sign in with the configured superuser credentials.
+5. Create or open a flow and run it in the Playground.
+6. If Redis cache is enabled, check `langflow-api` logs for Redis connection errors.
 
 ## Environment variable template
 

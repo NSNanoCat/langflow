@@ -61,8 +61,11 @@ http {
         location /health_check {
             proxy_pass ${BACKEND_URL};
         }
-        location /health {
-            proxy_pass ${BACKEND_URL};
+        location = /health {
+            # 中文：修复 Railway 前端健康检查依赖后端代理导致静态服务被误判失败的问题。
+            # English: Fix Railway frontend health checks being marked failed when they depend on backend proxy availability.
+            default_type application/json;
+            return 200 '{"status":"healthy"}';
         }
 
         include /etc/nginx/extra-conf.d/*.conf;
