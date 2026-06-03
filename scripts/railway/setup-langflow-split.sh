@@ -16,18 +16,41 @@ DEPLOY="${RAILWAY_DEPLOY:-false}"
 
 service_exists() {
   local service_name="$1"
-  "$RAILWAY_BIN" service list \
+  local services_json
+  if ! services_json="$("$RAILWAY_BIN" service list \
     --project "$PROJECT_ID" \
     --environment "$ENVIRONMENT" \
-    --json \
-    | python3 - "$service_name" <<'PY'
+    --json)"; then
+    printf 'Failed to list Railway services for %s/%s.\n' "$PROJECT_ID" "$ENVIRONMENT" >&2
+    exit 1
+  fi
+
+  set +e
+  python3 - "$service_name" "$services_json" <<'PY'
 import json
 import sys
 
-services = json.load(sys.stdin)
 target = sys.argv[1]
+try:
+    services = json.loads(sys.argv[2])
+except json.JSONDecodeError:
+    sys.exit(2)
+
 sys.exit(0 if any(service.get("name") == target for service in services) else 1)
 PY
+  local status="$?"
+  set -e
+
+  if [[ "$status" == "0" ]]; then
+    return 0
+  fi
+
+  if [[ "$status" == "1" ]]; then
+    return 1
+  fi
+
+  printf 'Failed to parse Railway service list JSON.\n' >&2
+  exit "$status"
 }
 
 ensure_database() {
@@ -62,10 +85,18 @@ PY
   printf 'Created %s service: %s\n' "$database_type" "$created_name"
 }
 
-"$RAILWAY_BIN" link \
-  --project "$PROJECT_ID" \
-  --environment "$ENVIRONMENT" \
-  --json >/dev/null
+if service_exists "$POSTGRES_SERVICE"; then
+  "$RAILWAY_BIN" link \
+    --project "$PROJECT_ID" \
+    --environment "$ENVIRONMENT" \
+    --service "$POSTGRES_SERVICE" \
+    --json >/dev/null
+else
+  "$RAILWAY_BIN" link \
+    --project "$PROJECT_ID" \
+    --environment "$ENVIRONMENT" \
+    --json >/dev/null
+fi
 
 ensure_database postgres "$POSTGRES_SERVICE"
 ensure_database redis "$REDIS_SERVICE"
