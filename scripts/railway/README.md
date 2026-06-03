@@ -30,7 +30,7 @@ The script is idempotent for the expected service names: it reuses existing serv
 It does not delete services or reset database data.
 If Railway creates a database service with a different name than expected, the script stops so variable references do not point at a missing service.
 Push the configured branch before deploying from Railway GitHub sources.
-`langflow-api` is pinned to `LANGFLOW_HOST=::` and `LANGFLOW_PORT=7860`, and `langflow-web` proxies to that private Railway endpoint.
+`langflow-api` is pinned to `LANGFLOW_HOST=0.0.0.0` and `LANGFLOW_PORT=7860`, and `langflow-web` proxies to that private Railway endpoint.
 
 ## Required secrets
 
