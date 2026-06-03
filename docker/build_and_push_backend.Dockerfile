@@ -102,6 +102,7 @@ USER user
 WORKDIR /app
 
 ENV LANGFLOW_HOST=0.0.0.0
-ENV LANGFLOW_PORT=7860
 
-CMD ["python", "-m", "langflow", "run", "--backend-only"]
+# 中文：修复 Railway 只注入 PORT 时后端仍固定监听 7860 导致健康检查失败的问题。
+# English: Fix Railway deployments where the backend keeps listening on 7860 when only PORT is injected.
+CMD ["sh", "-c", "exec python -m langflow run --backend-only --host \"${LANGFLOW_HOST:-0.0.0.0}\" --port \"${LANGFLOW_PORT:-${PORT:-7860}}\""]

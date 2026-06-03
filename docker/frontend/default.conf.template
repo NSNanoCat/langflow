@@ -7,6 +7,13 @@ http {
     default_type text/plain;
     client_max_body_size ${LANGFLOW_MAX_FILE_SIZE_UPLOAD}M;
 
+    # 中文：修复 /api WebSocket 代理缺少连接升级映射导致语音模式断开的问题。
+    # English: Fix /api WebSocket proxying by mapping upgrade connections for voice mode.
+    map $http_upgrade $connection_upgrade {
+        default upgrade;
+        "" close;
+    }
+
     types {
         text/html html;
         text/css css;
@@ -38,6 +45,17 @@ http {
         }
 
         location /api {
+            # 中文：修复拆分前端部署时 /api 下 WebSocket 与 SSE 长连接被 nginx 默认代理设置截断的问题。
+            # English: Fix split frontend deployments where nginx defaults interrupt /api WebSocket and SSE streams.
+            proxy_http_version 1.1;
+            proxy_set_header Connection $connection_upgrade;
+            proxy_set_header Host $host;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_buffering off;
+            proxy_read_timeout 3600s;
+            proxy_send_timeout 3600s;
             proxy_pass ${BACKEND_URL};
         }
         location /health_check {

@@ -13,6 +13,11 @@ if [ -z "$FRONTEND_PORT" ]; then
   FRONTEND_PORT="$2"
 fi
 if [ -z "$FRONTEND_PORT" ]; then
+  # 中文：修复 Railway 只注入 PORT 时前端 nginx 仍监听 80 导致服务不可达的问题。
+  # English: Fix Railway deployments where nginx keeps listening on 80 when only PORT is injected.
+  FRONTEND_PORT="$PORT"
+fi
+if [ -z "$FRONTEND_PORT" ]; then
   FRONTEND_PORT="80"
 fi
 if [ -z "$LANGFLOW_MAX_FILE_SIZE_UPLOAD" ]; then

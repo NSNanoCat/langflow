@@ -1,10 +1,17 @@
 ---
 title: Deploy Langflow on Railway
-description: Deploy Langflow to Railway using a one-click template
+description: Deploy Langflow to Railway with the one-click template or separate frontend and backend services
 slug: /deployment-railway
 ---
 
-This guide explains how to [deploy Langflow on Railway](https://railway.com/?utm_medium=integration&utm_source=docs&utm_campaign=langflow), a cloud infrastructure platform that provides auto-deploy, managed databases, and automatic scaling.
+This guide explains how to [deploy Langflow on Railway](https://railway.com/?utm_medium=integration&utm_source=docs&utm_campaign=langflow), a cloud infrastructure platform that provides auto-deploy, managed databases, private networking, and automatic scaling.
+
+You can deploy Langflow on Railway in either of the following ways:
+
+* [Use the Railway template](#use-the-railway-template) to deploy a single Langflow service quickly.
+* [Deploy separate frontend and backend services](#deploy-separate-frontend-and-backend-services) when you need the visual editor and API to scale or release independently.
+
+## Use the Railway template {#use-the-railway-template}
 
 1. Create a Railway account.
 
@@ -21,3 +28,86 @@ This guide explains how to [deploy Langflow on Railway](https://railway.com/?utm
 4. Wait for the deployment to complete.
 
 5. Navigate to your Langflow instance at your deployment's public URL, such as `https://APP-NAME.up.railway.app`.
+
+## Deploy separate frontend and backend services {#deploy-separate-frontend-and-backend-services}
+
+Use this layout when you want a Python backend service, a separate static frontend service, and Railway-managed PostgreSQL and Redis services.
+The backend service runs in `LANGFLOW_BACKEND_ONLY=True` mode, and the frontend service serves the built React app through nginx.
+The frontend proxies `/api`, `/health`, and `/health_check` requests to the backend over Railway private networking.
+
+### Services
+
+Create the following Railway services in the same project and environment:
+
+| Service | Source | Dockerfile path | Start command |
+| ------- | ------ | --------------- | ------------- |
+| `langflow-api` | This repository | `docker/build_and_push_backend.Dockerfile` | Use the Dockerfile command |
+| `langflow-web` | This repository | `docker/frontend/build_and_push_frontend.Dockerfile` | Use the Dockerfile command |
+| `Postgres` | Railway PostgreSQL template | Not applicable | Managed by Railway |
+| `Redis` | Railway Redis template | Not applicable | Managed by Railway |
+
+Start with these four services. Redis is used here for Langflow's experimental cache backend, not for Celery workers.
+
+### Backend variables
+
+Set these variables on the `langflow-api` service:
+
+```text
+LANGFLOW_BACKEND_ONLY=True
+LANGFLOW_HOST=0.0.0.0
+LANGFLOW_DATABASE_URL=${{Postgres.DATABASE_URL}}
+LANGFLOW_ALEMBIC_LOG_TO_STDOUT=True
+LANGFLOW_AUTO_LOGIN=False
+LANGFLOW_SUPERUSER=admin
+LANGFLOW_SUPERUSER_PASSWORD=<set-a-secret-password>
+LANGFLOW_SECRET_KEY=<set-a-generated-secret-key>
+```
+
+To use Redis for Langflow's experimental cache backend, also set:
+
+```text
+LANGFLOW_CACHE_TYPE=redis
+LANGFLOW_REDIS_URL=${{Redis.REDIS_URL}}
+```
+
+For production deployments, keep `LANGFLOW_AUTO_LOGIN=False` and set strong values for `LANGFLOW_SUPERUSER_PASSWORD` and `LANGFLOW_SECRET_KEY`.
+For more information, see [API keys and authentication](/api-keys-and-authentication#langflow-secret-key).
+
+### Frontend variables
+
+Set these variables on the `langflow-web` service:
+
+```text
+BACKEND_URL=http://${{langflow-api.RAILWAY_PRIVATE_DOMAIN}}:${{langflow-api.PORT}}
+```
+
+The frontend public domain is the URL users open in their browsers.
+The `BACKEND_URL` value uses Railway's private service domain because nginx runs inside the `langflow-web` service and proxies requests to `langflow-api`.
+
+### Railway service configuration
+
+When configuring services from the Railway dashboard, set the Dockerfile path for each service as shown in the services table.
+If you use the Railway CLI, the equivalent service configuration commands are:
+
+```shell
+railway environment edit --service-config langflow-api build.builder DOCKERFILE
+railway environment edit --service-config langflow-api build.dockerfilePath "docker/build_and_push_backend.Dockerfile"
+railway environment edit --service-config langflow-api deploy.healthcheckPath "/health"
+
+railway environment edit --service-config langflow-web build.builder DOCKERFILE
+railway environment edit --service-config langflow-web build.dockerfilePath "docker/frontend/build_and_push_frontend.Dockerfile"
+railway environment edit --service-config langflow-web deploy.healthcheckPath "/health"
+```
+
+### Validate the deployment
+
+1. Open the `langflow-api` public URL at `/health`.
+2. Open the `langflow-web` public URL.
+3. Sign in with the configured superuser credentials.
+4. Create or open a flow and run it in the Playground.
+5. If Redis cache is enabled, check `langflow-api` logs for Redis connection errors.
+
+## Environment variable template
+
+The repository includes `deploy/railway.env.example` as a copyable reference for the variables in this guide.
+Don't commit filled-in secrets.
