@@ -15,12 +15,6 @@ http {
     }
     resolver ${NGINX_RESOLVER} valid=10s ipv6=on;
 
-    types {
-        text/html html;
-        text/css css;
-        application/javascript js;
-    }
-
     server {
         gzip on;
         gzip_comp_level 2;
