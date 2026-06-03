@@ -85,6 +85,7 @@ BACKEND_URL=http://${{langflow-api.RAILWAY_PRIVATE_DOMAIN}}:7860
 
 The frontend public domain is the URL users open in their browsers.
 The `BACKEND_URL` value uses Railway's private service domain because nginx runs inside the `langflow-web` service and proxies requests to `langflow-api`.
+The frontend nginx startup script configures a runtime DNS resolver from the container's resolver settings so proxy requests can follow Railway private-network address changes after backend redeploys.
 
 ### Railway service configuration
 

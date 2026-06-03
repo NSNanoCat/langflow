@@ -32,6 +32,7 @@ If Railway creates a database service with a different name than expected, the s
 Push the configured branch before deploying from Railway GitHub sources.
 `langflow-api` is pinned to `LANGFLOW_HOST=0.0.0.0`, `PORT=7860`, and `LANGFLOW_PORT=7860`; `langflow-web` proxies to that private Railway endpoint.
 The web service health check targets its local `/health` endpoint; verify API proxy connectivity separately with `/health_check`.
+`langflow-web` configures nginx with the container DNS resolver so the proxy follows Railway private-network address changes after API redeploys.
 
 ## Required secrets
 
