@@ -17,8 +17,8 @@ Configure an existing project:
 
 ```bash
 export PATH="$HOME/.railway/bin:$PATH"
-export RAILWAY_PROJECT_ID="c4fdba9b-5085-415e-a0da-7cbd079defa5"
-export RAILWAY_BRANCH="codex/langflow-python-railway"
+export RAILWAY_PROJECT_ID="<project-id>"
+export RAILWAY_BRANCH="<branch-name>"
 scripts/railway/setup-langflow-split.sh
 ```
 
@@ -27,8 +27,8 @@ Create a new project from scratch:
 ```bash
 export PATH="$HOME/.railway/bin:$PATH"
 export RAILWAY_PROJECT_NAME="Langflow Split"
-export RAILWAY_WORKSPACE="248b7d45-1416-466c-b973-4a04968a069e"
-export RAILWAY_BRANCH="codex/langflow-python-railway"
+export RAILWAY_WORKSPACE="<workspace-id-or-name>"
+export RAILWAY_BRANCH="<branch-name>"
 export RAILWAY_STATE_FILE="./railway-langflow-split.env"
 scripts/railway/setup-langflow-split.sh
 ```
@@ -69,13 +69,19 @@ Create a clean project with only the four split services, verify it, then genera
 
 ```bash
 export RAILWAY_PROJECT_NAME="Langflow Split Template"
-export RAILWAY_WORKSPACE="248b7d45-1416-466c-b973-4a04968a069e"
+export RAILWAY_WORKSPACE="<workspace-id-or-name>"
 export RAILWAY_STATE_FILE="./railway-langflow-template.env"
 RAILWAY_DEPLOY=true scripts/railway/setup-langflow-split.sh
 
-source ./railway-langflow-template.env
-railway templates create --project "$RAILWAY_PROJECT_ID" --environment production --json
+scripts/railway/create-langflow-template.sh
 ```
 
 Before publishing the generated template, replace fixed `LANGFLOW_SUPERUSER_PASSWORD` and `LANGFLOW_SECRET_KEY` values in the Railway template editor with template secret variables.
 Use `scripts/railway/template-readme.md` as the marketplace README source when publishing.
+After that review, publish the draft:
+
+```bash
+RAILWAY_TEMPLATE_PUBLISH=true scripts/railway/create-langflow-template.sh
+```
+
+When `RAILWAY_TEMPLATE_ID` exists in the state file, the publish command reuses that reviewed draft instead of creating a new one.

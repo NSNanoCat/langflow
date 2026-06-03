@@ -108,7 +108,7 @@ Set `RAILWAY_RESET=true` only when you want to delete and recreate the four mana
 
 ```shell
 export RAILWAY_PROJECT_NAME="Langflow Split"
-export RAILWAY_BRANCH="codex/langflow-python-railway"
+export RAILWAY_BRANCH="<branch-name>"
 export RAILWAY_STATE_FILE="./railway-langflow-split.env"
 RAILWAY_DEPLOY=true scripts/railway/setup-langflow-split.sh
 ```
@@ -116,12 +116,12 @@ RAILWAY_DEPLOY=true scripts/railway/setup-langflow-split.sh
 To generate a Railway template draft from a verified clean project, run:
 
 ```shell
-source ./railway-langflow-split.env
-railway templates create --project "$RAILWAY_PROJECT_ID" --environment production --json
-railway templates publish <template-id> --category AI/ML --description "Deploy split Langflow with Postgres and Redis" --readme-file scripts/railway/template-readme.md --json
+export RAILWAY_STATE_FILE="./railway-langflow-split.env"
+scripts/railway/create-langflow-template.sh
 ```
 
 Before publishing, replace fixed `LANGFLOW_SUPERUSER_PASSWORD` and `LANGFLOW_SECRET_KEY` values in the Railway template editor with secret template variables.
+After that review, run `RAILWAY_TEMPLATE_PUBLISH=true scripts/railway/create-langflow-template.sh`.
 
 ### Validate the deployment
 
