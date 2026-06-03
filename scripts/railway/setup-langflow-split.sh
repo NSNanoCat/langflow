@@ -144,7 +144,7 @@ done
   --environment "$ENVIRONMENT" \
   --service "$WEB_SERVICE" \
   --skip-deploys \
-  "BACKEND_URL=http://\${{${API_SERVICE}.RAILWAY_PRIVATE_DOMAIN}}:\${{${API_SERVICE}.PORT}}" \
+  "BACKEND_URL=http://\${{${API_SERVICE}.RAILWAY_PRIVATE_DOMAIN}}:7860" \
   --json >/dev/null
 
 "$RAILWAY_BIN" domain \
