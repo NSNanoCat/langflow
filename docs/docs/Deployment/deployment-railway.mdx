@@ -102,6 +102,27 @@ railway environment edit --service-config langflow-web build.dockerfilePath "doc
 railway environment edit --service-config langflow-web deploy.healthcheckPath "/health"
 ```
 
+The repository also includes `scripts/railway/setup-langflow-split.sh`, which can create or configure the four-service deployment.
+Set `RAILWAY_PROJECT_ID` to configure an existing project, or set `RAILWAY_PROJECT_NAME` to create a new one.
+Set `RAILWAY_RESET=true` only when you want to delete and recreate the four managed split services.
+
+```shell
+export RAILWAY_PROJECT_NAME="Langflow Split"
+export RAILWAY_BRANCH="codex/langflow-python-railway"
+export RAILWAY_STATE_FILE="./railway-langflow-split.env"
+RAILWAY_DEPLOY=true scripts/railway/setup-langflow-split.sh
+```
+
+To generate a Railway template draft from a verified clean project, run:
+
+```shell
+source ./railway-langflow-split.env
+railway templates create --project "$RAILWAY_PROJECT_ID" --environment production --json
+railway templates publish <template-id> --category AI/ML --description "Deploy split Langflow with Postgres and Redis" --readme-file scripts/railway/template-readme.md --json
+```
+
+Before publishing, replace fixed `LANGFLOW_SUPERUSER_PASSWORD` and `LANGFLOW_SECRET_KEY` values in the Railway template editor with secret template variables.
+
 ### Validate the deployment
 
 1. Open the `langflow-api` public URL at `/health_check`.
