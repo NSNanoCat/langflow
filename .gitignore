@@ -294,5 +294,10 @@ CLAUDE.local.md
 langflow.log.*
 tmp_toolguard/
 
+# Railway 模板状态输出
+# Railway template state output
+railway-langflow-template.env
+railway-langflow-template.json
+
 #whitesource
 whitesource/
