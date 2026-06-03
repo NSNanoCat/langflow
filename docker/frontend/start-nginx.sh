@@ -28,7 +28,7 @@ fi
 if [ -z "$NGINX_RESOLVER" ]; then
   # 中文：修复 Railway 私网 DNS 变化后 nginx 缺少运行时 resolver 导致代理卡住的问题。
   # English: Fix Railway private DNS changes causing stuck nginx proxying when no runtime resolver is configured.
-  NGINX_RESOLVER="$(awk '/^nameserver / { printf "%s ", $2 }' /etc/resolv.conf | sed 's/[[:space:]]*$//')"
+  NGINX_RESOLVER="$(awk '/^nameserver / { resolver = $2; if (resolver ~ /:/ && resolver !~ /^\[/) resolver = "[" resolver "]"; printf "%s ", resolver }' /etc/resolv.conf | sed 's/[[:space:]]*$//')"
 fi
 if [ -z "$NGINX_RESOLVER" ]; then
   NGINX_RESOLVER="127.0.0.11"
