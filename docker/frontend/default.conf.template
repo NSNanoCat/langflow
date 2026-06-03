@@ -13,6 +13,7 @@ http {
         default upgrade;
         "" close;
     }
+    resolver ${NGINX_RESOLVER} valid=10s ipv6=on;
 
     types {
         text/html html;
@@ -30,6 +31,7 @@ http {
         gzip_disable "MSIE [4-6] \.";
 
         listen ${FRONTEND_PORT};
+        set $langflow_backend_url "${BACKEND_URL}";
 
         location / {
             root /usr/share/nginx/html;
@@ -56,10 +58,14 @@ http {
             proxy_buffering off;
             proxy_read_timeout 3600s;
             proxy_send_timeout 3600s;
-            proxy_pass ${BACKEND_URL};
+            # 中文：修复 Railway 私网目标在后端重新部署后 nginx 继续使用过期解析地址的问题。
+            # English: Fix nginx continuing to use stale Railway private-network addresses after backend redeploys.
+            proxy_pass $langflow_backend_url$request_uri;
         }
         location /health_check {
-            proxy_pass ${BACKEND_URL};
+            # 中文：修复 Railway 私网目标在后端重新部署后 nginx 继续使用过期解析地址的问题。
+            # English: Fix nginx continuing to use stale Railway private-network addresses after backend redeploys.
+            proxy_pass $langflow_backend_url$request_uri;
         }
         location = /health {
             # 中文：修复 Railway 前端健康检查依赖后端代理导致静态服务被误判失败的问题。
