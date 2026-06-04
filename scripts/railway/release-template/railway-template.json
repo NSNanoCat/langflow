@@ -1,0 +1,131 @@
+{
+  "$schema": "https://railway.com/schema/template.json",
+  "name": "Langflow Split",
+  "description": "Deploy Langflow as separate backend and frontend services with Railway PostgreSQL and Redis.",
+  "groups": {
+    "frontend": {
+      "name": "Frontend"
+    },
+    "backend": {
+      "name": "Backend"
+    }
+  },
+  "services": {
+    "Postgres": {
+      "name": "Postgres",
+      "template": "postgres",
+      "groupId": "backend"
+    },
+    "Redis": {
+      "name": "Redis",
+      "template": "redis",
+      "groupId": "backend"
+    },
+    "langflow-api": {
+      "name": "langflow-api",
+      "source": {
+        "repo": "https://github.com/NSNanoCat/langflow-railway-template"
+      },
+      "build": {
+        "builder": "DOCKERFILE",
+        "dockerfilePath": "Dockerfile.backend"
+      },
+      "deploy": {
+        "healthcheckPath": "/health_check"
+      },
+      "variables": {
+        "LANGFLOW_ALEMBIC_LOG_TO_STDOUT": {
+          "defaultValue": "True",
+          "isOptional": false
+        },
+        "LANGFLOW_AUTO_LOGIN": {
+          "defaultValue": "False",
+          "isOptional": false
+        },
+        "LANGFLOW_CACHE_TYPE": {
+          "defaultValue": "redis",
+          "isOptional": false
+        },
+        "LANGFLOW_CONFIG_DIR": {
+          "defaultValue": "/app/langflow",
+          "isOptional": false
+        },
+        "LANGFLOW_DATABASE_CONNECTION_RETRY": {
+          "defaultValue": "true",
+          "isOptional": false
+        },
+        "LANGFLOW_DATABASE_URL": {
+          "defaultValue": "${{Postgres.DATABASE_URL}}",
+          "isOptional": false
+        },
+        "LANGFLOW_HOST": {
+          "defaultValue": "0.0.0.0",
+          "isOptional": false
+        },
+        "LANGFLOW_PORT": {
+          "defaultValue": "7860",
+          "isOptional": false
+        },
+        "LANGFLOW_REDIS_URL": {
+          "defaultValue": "${{Redis.REDIS_URL}}",
+          "isOptional": false
+        },
+        "LANGFLOW_SECRET_KEY": {
+          "defaultValue": "${{secret(43, \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_\")}}=",
+          "isOptional": false
+        },
+        "LANGFLOW_SUPERUSER": {
+          "defaultValue": "admin",
+          "isOptional": false
+        },
+        "LANGFLOW_SUPERUSER_PASSWORD": {
+          "defaultValue": "${{secret(32, \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\")}}",
+          "isOptional": false
+        },
+        "PORT": {
+          "defaultValue": "7860",
+          "isOptional": false
+        }
+      },
+      "volumeMounts": {
+        "langflow-api-volume": {
+          "mountPath": "/app/langflow"
+        }
+      },
+      "groupId": "backend"
+    },
+    "langflow-web": {
+      "name": "langflow-web",
+      "source": {
+        "repo": "https://github.com/NSNanoCat/langflow-railway-template"
+      },
+      "build": {
+        "builder": "DOCKERFILE",
+        "dockerfilePath": "Dockerfile.frontend"
+      },
+      "deploy": {
+        "healthcheckPath": "/health"
+      },
+      "networking": {
+        "serviceDomains": {
+          "<hasDomain>": {}
+        }
+      },
+      "variables": {
+        "BACKEND_URL": {
+          "defaultValue": "http://${{langflow-api.RAILWAY_PRIVATE_DOMAIN}}:7860",
+          "isOptional": false
+        },
+        "FRONTEND_PORT": {
+          "defaultValue": "8080",
+          "isOptional": false
+        },
+        "PORT": {
+          "defaultValue": "8080",
+          "isOptional": false
+        }
+      },
+      "groupId": "frontend"
+    }
+  }
+}
