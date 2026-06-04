@@ -1,7 +1,8 @@
 import { cloneDeep } from "lodash";
 import { useContext, useState } from "react";
-import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useParams } from "react-router-dom";
+import { getAxiosErrorMessage } from "@/controllers/API/helpers/get-axios-error-message";
 import { usePostAddApiKey } from "@/controllers/API/queries/api-keys";
 import {
   useResetPassword,
@@ -21,6 +22,7 @@ import type {
 } from "../../../../types/components";
 import useScrollToElement from "../hooks/use-scroll-to-element";
 import GeneralPageHeaderComponent from "./components/GeneralPageHeader";
+import LanguageFormComponent from "./components/LanguageForm";
 import PasswordFormComponent from "./components/PasswordForm";
 import ProfilePictureFormComponent from "./components/ProfilePictureForm";
 
@@ -67,7 +69,7 @@ export const GeneralPage = () => {
           onError: (error) => {
             setErrorData({
               title: t("errors.saveChanges"),
-              list: [(error as any)?.response?.data?.detail],
+              list: [getAxiosErrorMessage(error, t("errors.generic"))],
             });
           },
         },
@@ -91,7 +93,7 @@ export const GeneralPage = () => {
           onError: (error) => {
             setErrorData({
               title: t("errors.saveChanges"),
-              list: [(error as any)?.response?.data?.detail],
+              list: [getAxiosErrorMessage(error, t("errors.generic"))],
             });
           },
         },
@@ -112,7 +114,7 @@ export const GeneralPage = () => {
     onError: (error) => {
       setErrorData({
         title: t("errors.saveApiKey"),
-        list: [(error as any)?.response?.data?.detail],
+        list: [getAxiosErrorMessage(error, t("errors.generic"))],
       });
       setHasApiKey(false);
       setValidApiKey(false);
@@ -138,6 +140,8 @@ export const GeneralPage = () => {
       <GeneralPageHeaderComponent />
 
       <div className="flex w-full flex-col gap-6">
+        <LanguageFormComponent />
+
         {ENABLE_PROFILE_ICONS && (
           <ProfilePictureFormComponent
             profilePicture={profilePicture}

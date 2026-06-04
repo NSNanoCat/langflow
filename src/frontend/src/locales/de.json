@@ -250,6 +250,7 @@
   "settings.generalDescription": "Verwalten Sie die Einstellungen für Langflow und Ihr Konto.",
   "settings.generalTitle": "Allgemein",
   "settings.languageDescription": "Wählen Sie die Anzeigesprache für die Langflow-Benutzeroberfläche aus.",
+  "settings.languageAuto": "Automatisch",
   "settings.languageRecommended": "Empfohlen",
   "settings.languageSelectAriaLabel": "Sprache auswählen",
   "settings.languageTitle": "Sprache",
