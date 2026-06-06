@@ -117,6 +117,7 @@ OPENAI_MODELS_DETAILED = [
         search=True,
         preview=True,
     ),
+    create_model_metadata(provider="OpenAI", name="gpt-image-2", icon="OpenAI"),
     # Not Supported Models
     create_model_metadata(
         provider="OpenAI", name="computer-use-preview", icon="OpenAI", not_supported=True, preview=True

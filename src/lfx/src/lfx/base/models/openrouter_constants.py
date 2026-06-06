@@ -46,6 +46,12 @@ OPENROUTER_MODELS_DETAILED = [
     ),
     create_model_metadata(
         provider="OpenRouter",
+        name="openai/gpt-5.4-image-2",
+        icon="OpenRouter",
+        reasoning=True,
+    ),
+    create_model_metadata(
+        provider="OpenRouter",
         name="google/gemini-2.5-pro",
         icon="OpenRouter",
         tool_calling=True,
