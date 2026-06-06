@@ -321,18 +321,20 @@ async def get_enabled_providers(
 @router.post("/validate-provider", status_code=200, response_model=ValidateProviderResponse)
 async def validate_provider(
     request: ValidateProviderRequest,
-    current_user: CurrentActiveUser,  # noqa: ARG001
+    current_user: CurrentActiveUser,
 ) -> ValidateProviderResponse:
     """Validate provider credentials before saving.
 
     This endpoint checks if the provided credentials are valid by attempting
     to connect to the provider. Use this for real-time validation in the UI.
     """
-    from lfx.base.models.unified_models import validate_model_provider_key
+    from lfx.base.models.unified_models import get_all_variables_for_provider, validate_model_provider_key
 
     try:
+        variables = get_all_variables_for_provider(current_user.id, request.provider)
+        variables.update(request.variables)
         # Validate the credentials
-        validate_model_provider_key(request.provider, request.variables)
+        validate_model_provider_key(request.provider, variables)
         return ValidateProviderResponse(valid=True, error=None)
     except ValueError as e:
         return ValidateProviderResponse(valid=False, error=str(e))

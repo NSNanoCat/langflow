@@ -103,7 +103,17 @@ MODEL_PROVIDER_METADATA: dict[str, Any] = {
                     "advanced": True,
                     "info": "Falls back to OPENAI_API_KEY environment variable",
                 },
-            }
+            },
+            {
+                "variable_name": "Base URL",
+                "variable_key": "OPENAI_API_BASE",
+                "required": False,
+                "is_secret": False,
+                "is_list": False,
+                "options": [],
+                "langchain_param": "base_url",
+                "description": "Optional. Leave blank to use the official OpenAI API base URL.",
+            },
         ],
         "api_docs_url": "https://platform.openai.com/docs/overview",
         "mapping": {

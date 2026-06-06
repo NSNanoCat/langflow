@@ -89,7 +89,17 @@ class DatabaseVariableService(VariableService, Service):
                             try:
                                 from lfx.base.models.unified_models import validate_model_provider_key
 
-                                validate_model_provider_key(provider_name, {var_name: value})
+                                provider_variables = {var_name: value}
+                                for provider_var in metadata.get(provider_name, {}).get("variables", []):
+                                    provider_var_name = provider_var.get("variable_key")
+                                    if (
+                                        provider_var_name
+                                        and provider_var_name != var_name
+                                        and provider_var_name in os.environ
+                                        and os.environ[provider_var_name].strip()
+                                    ):
+                                        provider_variables[provider_var_name] = os.environ[provider_var_name].strip()
+                                validate_model_provider_key(provider_name, provider_variables)
                                 # Only set default_fields if validation passes
                                 default_fields = [provider_name, var_display_name]
                                 await logger.adebug(f"Validated {var_name} - provider will be enabled")

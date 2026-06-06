@@ -427,7 +427,11 @@ def validate_model_provider_key(provider: str, variables: dict[str, str], model_
             api_key = variables.get("OPENAI_API_KEY")
             if not api_key:
                 return
-            llm = ChatOpenAI(api_key=api_key, model_name=validation_model, max_tokens=1)
+            kwargs = {"api_key": api_key, "model_name": validation_model, "max_tokens": 1}
+            base_url = variables.get("OPENAI_API_BASE")
+            if base_url and base_url.strip():
+                kwargs["base_url"] = base_url.strip()
+            llm = ChatOpenAI(**kwargs)
             llm.invoke("test")
 
         elif provider == "Anthropic":

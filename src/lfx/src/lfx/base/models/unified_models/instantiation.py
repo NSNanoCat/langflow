@@ -182,7 +182,14 @@ def get_llm(
         kwargs["stream_usage"] = True
 
     # Add provider-specific parameters
-    if provider in {"IBM WatsonX", "IBM watsonx.ai"}:
+    if provider == "OpenAI":
+        provider_vars = unified_models_module.get_all_variables_for_provider(user_id, provider)
+        base_url_value = _to_str(provider_vars.get("OPENAI_API_BASE")) or _to_str(
+            _env_if_allowed("OPENAI_API_BASE")
+        )
+        if base_url_value:
+            kwargs["base_url"] = base_url_value
+    elif provider in {"IBM WatsonX", "IBM watsonx.ai"}:
         # For watsonx, url and project_id are required parameters
         # Try database first, then component values, then environment variables
         url_param = metadata.get("url_param", "url")
@@ -323,9 +330,14 @@ def get_embeddings(
     metadata = model_dict.get("metadata", {})
     api_base_value = _to_str(api_base)
     if provider == "OpenAI" and not api_base_value:
-        api_base_value = _to_str(os.environ.get("OPENAI_EMBEDDINGS_API_BASE")) or _to_str(
-            os.environ.get("OPENAI_API_BASE")
-        )
+        provider_vars = unified_models_module.get_all_variables_for_provider(user_id, provider)
+        provider_api_base_value = _to_str(provider_vars.get("OPENAI_API_BASE"))
+        env_embeddings_api_base_value = _to_str(_env_if_allowed("OPENAI_EMBEDDINGS_API_BASE"))
+        env_openai_api_base_value = _to_str(_env_if_allowed("OPENAI_API_BASE"))
+        if provider_api_base_value and provider_api_base_value != env_openai_api_base_value:
+            api_base_value = provider_api_base_value
+        else:
+            api_base_value = env_embeddings_api_base_value or provider_api_base_value or env_openai_api_base_value
 
     # --- resolve API key -----------------------------------------------------
     api_key = unified_models_module.get_api_key_for_provider(user_id, provider, api_key)

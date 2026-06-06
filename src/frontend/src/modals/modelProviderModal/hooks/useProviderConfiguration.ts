@@ -303,18 +303,25 @@ export const useProviderConfiguration = ({
 
   // Check if there are any new values to save
   const hasNewValuesToSave = useMemo(() => {
-    return providerVariables.some((v) =>
-      variableValues[v.variable_key]?.trim(),
-    );
-  }, [providerVariables, variableValues]);
+    return providerVariables.some((v) => {
+      if (!(v.variable_key in variableValues)) return false;
+      const value = variableValues[v.variable_key]?.trim();
+      return (
+        Boolean(value) ||
+        (!v.required && !v.is_secret && isVariableConfigured(v.variable_key))
+      );
+    });
+  }, [providerVariables, variableValues, isVariableConfigured]);
 
   // Build the variables object for validation
   const getVariablesForValidation = useCallback((): Record<string, string> => {
     const variables: Record<string, string> = {};
     for (const v of providerVariables) {
-      const newValue = variableValues[v.variable_key]?.trim();
-      if (newValue) {
-        variables[v.variable_key] = newValue;
+      if (v.variable_key in variableValues) {
+        const newValue = variableValues[v.variable_key]?.trim() ?? "";
+        if (newValue || (!v.required && !v.is_secret)) {
+          variables[v.variable_key] = newValue;
+        }
       } else {
         // Use existing configured value
         const existing = globalVariables.find(
@@ -390,13 +397,19 @@ export const useProviderConfiguration = ({
     }));
   }, []);
 
-  // Save all variables in parallel — validates first, then saves if valid
+  // 先校验再保存变量，非密钥配置必须先于主密钥写入，避免主密钥校验缺少 base URL 等上下文。
+  // Validate first, then save non-secret config before primary secrets so credential validation has URL context.
   const handleSaveAllVariables = useCallback(async () => {
     if (!selectedProvider) return;
 
-    const variablesToSave = providerVariables.filter((v) =>
-      variableValues[v.variable_key]?.trim(),
-    );
+    const variablesToSave = providerVariables.filter((v) => {
+      if (!(v.variable_key in variableValues)) return false;
+      const value = variableValues[v.variable_key]?.trim();
+      return (
+        Boolean(value) ||
+        (!v.required && !v.is_secret && isVariableConfigured(v.variable_key))
+      );
+    });
 
     if (variablesToSave.length === 0) return;
 
@@ -407,30 +420,36 @@ export const useProviderConfiguration = ({
     setValidationFailed(false);
 
     try {
-      // Fire all mutations in parallel
-      await Promise.all(
-        variablesToSave.map(async (variable) => {
-          const value = variableValues[variable.variable_key].trim();
-          const existingVariable = globalVariables.find(
-            (v) => v.name === variable.variable_key,
-          );
-          const variableType = variable.is_secret
-            ? VARIABLE_CATEGORY.CREDENTIAL
-            : VARIABLE_CATEGORY.GLOBAL;
+      const orderedVariablesToSave = [
+        ...variablesToSave.filter((variable) => !variable.is_secret),
+        ...variablesToSave.filter((variable) => variable.is_secret),
+      ];
+      for (const variable of orderedVariablesToSave) {
+        const value = variableValues[variable.variable_key].trim();
+        const existingVariable = globalVariables.find(
+          (v) => v.name === variable.variable_key,
+        );
+        const variableType = variable.is_secret
+          ? VARIABLE_CATEGORY.CREDENTIAL
+          : VARIABLE_CATEGORY.GLOBAL;
 
-          if (existingVariable) {
-            return updateGlobalVariable({ id: existingVariable.id, value });
-          } else {
-            return createGlobalVariable({
-              name: variable.variable_key,
-              value,
-              type: variableType,
-              category: VARIABLE_CATEGORY.GLOBAL,
-              default_fields: [],
-            });
-          }
-        }),
-      );
+        if (!value && existingVariable && !variable.required) {
+          await deleteGlobalVariable({ id: existingVariable.id });
+          continue;
+        }
+
+        if (existingVariable) {
+          await updateGlobalVariable({ id: existingVariable.id, value });
+        } else {
+          await createGlobalVariable({
+            name: variable.variable_key,
+            value,
+            type: variableType,
+            category: VARIABLE_CATEGORY.GLOBAL,
+            default_fields: [],
+          });
+        }
+      }
 
       // All succeeded — defer toast and value clear until after models refetch
       hasUserMadeChangesRef.current = true;
@@ -458,6 +477,9 @@ export const useProviderConfiguration = ({
     globalVariables,
     createGlobalVariable,
     updateGlobalVariable,
+    deleteGlobalVariable,
+    isVariableConfigured,
+    validateCredentials,
     setSuccessData,
     setErrorData,
     invalidateProviderQueries,

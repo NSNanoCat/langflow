@@ -4,7 +4,11 @@ import logging
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException
-from lfx.base.models.unified_models import get_model_provider_variable_mapping, validate_model_provider_key
+from lfx.base.models.unified_models import (
+    get_model_provider_variable_mapping,
+    get_provider_all_variables,
+    validate_model_provider_key,
+)
 from sqlalchemy.exc import NoResultFound
 
 from langflow.api.utils import CurrentActiveUser, DbSession
@@ -131,10 +135,26 @@ async def create_variable(
     if variable.name in model_provider_variable_mapping.values():
         provider = get_provider_from_variable_name(variable.name)
         if provider is not None:
+            variables = {variable.name: variable.value}
+            for provider_variable in get_provider_all_variables(provider):
+                variable_key = provider_variable.get("variable_key")
+                if not variable_key or variable_key in variables:
+                    continue
+                try:
+                    configured_value = await variable_service.get_variable(
+                        user_id=current_user.id,
+                        name=variable_key,
+                        field="",
+                        session=session,
+                    )
+                    if configured_value:
+                        variables[variable_key] = str(configured_value)
+                except ValueError:
+                    continue
             # Validate that the key actually works using the Language Model Service
             # Run validation off the event loop to avoid blocking
             try:
-                await asyncio.to_thread(validate_model_provider_key, provider, {variable.name: variable.value})
+                await asyncio.to_thread(validate_model_provider_key, provider, variables)
             except ValueError as e:
                 raise HTTPException(status_code=400, detail=str(e)) from e
 
@@ -245,12 +265,28 @@ async def update_variable(
         if existing_variable.name in model_provider_variable_mapping.values() and variable.value:
             provider = get_provider_from_variable_name(existing_variable.name)
             if provider is not None:
+                variables = {existing_variable.name: variable.value}
+                for provider_variable in get_provider_all_variables(provider):
+                    variable_key = provider_variable.get("variable_key")
+                    if not variable_key or variable_key in variables:
+                        continue
+                    try:
+                        configured_value = await variable_service.get_variable(
+                            user_id=owner_id,
+                            name=variable_key,
+                            field="",
+                            session=session,
+                        )
+                        if configured_value:
+                            variables[variable_key] = str(configured_value)
+                    except ValueError:
+                        continue
                 # Run validation off the event loop to avoid blocking
                 try:
                     await asyncio.to_thread(
                         validate_model_provider_key,
                         provider,
-                        {existing_variable.name: variable.value},
+                        variables,
                     )
                 except ValueError as e:
                     raise HTTPException(status_code=400, detail=str(e)) from e
