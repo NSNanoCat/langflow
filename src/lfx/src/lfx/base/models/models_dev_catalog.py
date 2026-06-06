@@ -358,6 +358,7 @@ def apply_models_dev_overrides(
     # Build provider_name -> {model_name: deprecated} from the static lists so
     # we can preserve the static curation through the override.
     static_deprecated_by_provider: dict[str, set[str]] = {}
+    static_entries_by_provider: dict[str, list[dict[str, Any]]] = {}
     for group in static_lists:
         for entry in group:
             if not isinstance(entry, dict):
@@ -366,6 +367,7 @@ def apply_models_dev_overrides(
             name = entry.get("name")
             if not provider or not name:
                 continue
+            static_entries_by_provider.setdefault(provider, []).append(entry)
             if entry.get("deprecated"):
                 static_deprecated_by_provider.setdefault(provider, set()).add(name)
 
@@ -386,6 +388,12 @@ def apply_models_dev_overrides(
             for m in _provider_model_dicts(provider_block)
         ]
         if translated:
+            translated_names = {m.get("name") for m in translated}
+            for static_entry in static_entries_by_provider.get(provider_name, []):
+                static_name = static_entry.get("name")
+                if static_name and static_name not in translated_names:
+                    translated.append(dict(static_entry))
+                    translated_names.add(static_name)
             overrides[provider_name] = translated
 
     if not overrides:
